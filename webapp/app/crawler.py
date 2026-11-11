@@ -56,10 +56,10 @@ def _is_next_page_link(text: str, href: str) -> bool:
     return False
 
 
-def _extract_list_links(html: str, page_url: str) -> tuple[list[str], str | None]:
-    """从列表页提取 (详情候选链接, 下一页链接)。"""
+def extract_list_links_with_text(html: str, page_url: str) -> tuple[list[tuple[str, str]], str | None]:
+    """从列表页提取 ((详情候选链接, 锚文本), 下一页链接)。"""
     soup = BeautifulSoup(html, "html.parser")
-    detail_candidates: list[str] = []
+    detail_candidates: list[tuple[str, str]] = []
     next_page: str | None = None
 
     for anchor in soup.find_all("a", href=True):
@@ -75,7 +75,7 @@ def _extract_list_links(html: str, page_url: str) -> tuple[list[str], str | None
 
         # 公告详情的判定：锚文本较长且含编号/公告字样，或 URL 形态像详情页
         looks_like_detail = False
-        if re.search(r"公告|更正|延期|变更|澄清|中标|成交", text) and len(text) >= 6:
+        if re.search(r"公告|更正|延期|变更|澄清|中标|成交|公示", text) and len(text) >= 6:
             looks_like_detail = True
         elif _DETAIL_HINT_RE.search(urlparse(url).path) and not _LIST_HINT_RE.search(urlparse(url).path):
             looks_like_detail = True
@@ -83,16 +83,22 @@ def _extract_list_links(html: str, page_url: str) -> tuple[list[str], str | None
             looks_like_detail = True
 
         if looks_like_detail:
-            detail_candidates.append(url)
+            detail_candidates.append((url, text))
 
     # 去重保序
     seen: set[str] = set()
-    unique: list[str] = []
-    for url in detail_candidates:
+    unique: list[tuple[str, str]] = []
+    for url, text in detail_candidates:
         if url not in seen:
             seen.add(url)
-            unique.append(url)
+            unique.append((url, text))
     return unique, next_page
+
+
+def _extract_list_links(html: str, page_url: str) -> tuple[list[str], str | None]:
+    """从列表页提取 (详情候选链接, 下一页链接)。"""
+    pairs, next_page = extract_list_links_with_text(html, page_url)
+    return [url for url, _ in pairs], next_page
 
 
 def crawl(entry_url: str) -> CrawlReport:

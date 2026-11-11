@@ -8,6 +8,14 @@
   P5 只有原始招标公告              -> 有效，沿用原截止时间
   P6 公告未公布任何截止时间        -> 未公布
 列表页分两页，通过“下一页”链接串联，验证分页抓取。
+
+另含“中标联合体候选人核对”示例目录 bidlist/（同样分两页）：
+  BD-2026-101 中标联合体 = 第二中标候选人（成员行顺序被打乱） -> 入围
+  BD-2026-102 中标联合体成员同名但信用代码不同（同名异码）    -> 未入围
+  BD-2026-103 仅牵头人与第一中标候选人相同                   -> 未入围
+  BD-2026-104 只有中标公告，无候选人公示                     -> 待核实（候选资料缺失）
+  BD-2026-105 中标公告详情页缺失（404）                      -> 待核实（详情抓取失败）
+  BD-2026-106 候选人公示详情页缺失（404）                    -> 待核实（详情抓取失败）
 """
 from __future__ import annotations
 
@@ -170,7 +178,317 @@ def build_index() -> str:
 <body>
 <div class="wrap">
   <h1>示例采购信息平台</h1>
-  <p><a href="list/page_1.html">进入招标采购公告列表</a></p>
+  <p><a href="list/page_1.html">进入招标采购公告列表（延期核对示例）</a></p>
+  <p><a href="bidlist/page_1.html">进入中标公告目录（联合体候选人核对示例）</a></p>
+</div>
+</body>
+</html>
+"""
+
+
+# ===================== 中标联合体候选人核对示例 =====================
+
+# 成员行：(角色, 成员名称, 统一社会信用代码)
+# 候选条目：(候选序号, [成员行...])
+# 候选人公示标段：(标段编号, 标段名称, [候选条目...])
+# 中标公告标段：  (标段编号, 标段名称, [成员行...])
+BID_NOTICES: list[dict] = [
+    # --- BD-2026-101：中标联合体 = 第二中标候选人，成员行顺序被打乱 -> 入围 ---
+    {
+        "file": "cand_101.html", "kind": "candidate",
+        "project_no": "CG-2026-201", "project_name": "智慧物流园区建设项目",
+        "notice_type": "中标候选人公示", "publish": "2026-10-28 09:30:00",
+        "title": "智慧物流园区建设项目中标候选人公示",
+        "note": "公示期为三个工作日，投标人或者其他利害关系人对评标结果有异议的，应当在中标候选人公示期间书面提出。",
+        "headers": ("候选序号", "成员角色", "成员名称", "统一社会信用代码"),
+        "sections": [
+            ("BD-2026-101", "一标段：仓储设备", [
+                ("第一中标候选人", [
+                    ("牵头人", "华宇建设集团有限公司", "91110108MA01C8Y45X"),
+                    ("成员", "中科设计院有限公司", "91110105MA02D9W67Y"),
+                ]),
+                ("第二中标候选人", [
+                    ("牵头人", "宏基工程集团有限公司", "91320100MA1XK3T88B"),
+                    ("成员", "远大路桥建设有限公司", "91320500MA2YL4U99C"),
+                    ("成员", "星辰监理咨询有限公司", "91330100MA3WM5W10D"),
+                ]),
+                ("第三中标候选人", [
+                    ("牵头人", "安平市政工程有限公司", "91440100MA4AN6X21E"),
+                    ("成员", "通力机电安装有限公司", "91440300MA5BP7Y32F"),
+                ]),
+            ]),
+        ],
+    },
+    {
+        "file": "win_101.html", "kind": "winning",
+        "project_no": "CG-2026-201", "project_name": "智慧物流园区建设项目",
+        "notice_type": "中标结果公告", "publish": "2026-11-03 10:00:00",
+        "title": "智慧物流园区建设项目中标结果公告",
+        "note": "中标结果已依法确认，现将中标联合体成员信息公告如下。",
+        "headers": ("成员角色", "中标联合体成员名称", "统一社会信用代码"),
+        "sections": [
+            # 与第二中标候选人同一联合体，但成员行顺序不同（牵头人列在最后）
+            ("BD-2026-101", "一标段：仓储设备", [
+                ("成员", "远大路桥建设有限公司", "91320500MA2YL4U99C"),
+                ("成员", "星辰监理咨询有限公司", "91330100MA3WM5W10D"),
+                ("牵头人", "宏基工程集团有限公司", "91320100MA1XK3T88B"),
+            ]),
+        ],
+    },
+
+    # --- BD-2026-102 / BD-2026-103：一份公示覆盖两个标段（多标段页面） ---
+    {
+        "file": "cand_102_103.html", "kind": "candidate",
+        "project_no": "CG-2026-202", "project_name": "城市基础设施提升工程",
+        "notice_type": "中标候选人公示", "publish": "2026-10-30 15:00:00",
+        "title": "城市基础设施提升工程（一、二标段）中标候选人名单公示",
+        "note": "现将本项目一标段、二标段中标候选人名单予以公示，接受社会监督。",
+        "headers": ("候选序号", "联合体角色", "单位名称", "统一社会信用代码"),
+        "sections": [
+            ("BD-2026-102", "一标段：排水管网改造", [
+                ("第一中标候选人", [
+                    ("牵头人", "清源环保科技有限公司", "91510100MA6CQ8A43G"),
+                    ("成员", "蓝图水务工程有限公司", "91510107MA7DR9B54H"),
+                ]),
+                ("第二中标候选人", [
+                    ("牵头人", "巨浪机械集团有限公司", "91370200MA8E11C65J"),
+                ]),
+            ]),
+            ("BD-2026-103", "二标段：文化中心智能化", [
+                ("第一中标候选人", [
+                    ("牵头人", "智联系统集成有限公司", "91110114MA9FT2D76K"),
+                    ("成员", "云杉软件科技有限公司", "91110108MA1GU3E87L"),
+                ]),
+                ("第二中标候选人", [
+                    ("牵头人", "北斗安防工程有限公司", "91330106MA2HW4F98M"),
+                    ("成员", "明辉电气有限公司", "91330103MA3JW5G09N"),
+                ]),
+            ]),
+        ],
+    },
+    # --- BD-2026-102：中标联合体成员同名但信用代码不同（同名异码） -> 未入围 ---
+    {
+        "file": "win_102.html", "kind": "winning",
+        "project_no": "CG-2026-202", "project_name": "城市基础设施提升工程",
+        "notice_type": "中标公告", "publish": "2026-10-29 11:00:00",
+        "title": "城市基础设施提升工程一标段（排水管网改造）中标公告",
+        "note": "一标段中标人信息如下，特此公告。",
+        "headers": ("角色", "中标人名称", "统一社会信用代码"),
+        "sections": [
+            ("BD-2026-102", "一标段：排水管网改造", [
+                ("牵头人", "清源环保科技有限公司", "91510100MA6CQ8A43G"),
+                # 与第一中标候选人同名，但统一社会信用代码不同
+                ("成员", "蓝图水务工程有限公司", "91510107MA7DR9B99X"),
+            ]),
+        ],
+    },
+    # --- BD-2026-103：仅牵头人与第一中标候选人相同 -> 未入围 ---
+    {
+        "file": "win_103.html", "kind": "winning",
+        "project_no": "CG-2026-202", "project_name": "城市基础设施提升工程",
+        "notice_type": "中标结果公告", "publish": "2026-11-04 09:30:00",
+        "title": "城市基础设施提升工程二标段（文化中心智能化）中标结果公告",
+        "note": "二标段中标联合体成员信息如下。",
+        "headers": ("成员角色", "供应商名称", "统一信用代码"),
+        "sections": [
+            ("BD-2026-103", "二标段：文化中心智能化", [
+                ("牵头人", "智联系统集成有限公司", "91110114MA9FT2D76K"),
+                # 牵头人与第一中标候选人相同，其余成员不同
+                ("成员", "迅捷网络工程有限公司", "91500100MA4KX6H10P"),
+            ]),
+        ],
+    },
+
+    # --- BD-2026-104：只有中标公告，无候选人公示 -> 待核实（候选资料缺失） ---
+    {
+        "file": "win_104.html", "kind": "winning",
+        "project_no": "CG-2026-204", "project_name": "新能源充电桩采购项目",
+        "notice_type": "中标结果公告", "publish": "2026-10-27 14:00:00",
+        "title": "新能源充电桩采购项目中标结果公告",
+        "note": "本项目中标联合体信息如下。",
+        "headers": ("成员角色", "成员名称", "统一社会信用代码"),
+        "sections": [
+            ("BD-2026-104", "充电桩设备采购", [
+                ("牵头人", "绿动能源科技有限公司", "91410100MA5LN7J21Q"),
+                ("成员", "快充设备制造有限公司", "91410103MA6MP8K32R"),
+            ]),
+        ],
+    },
+
+    # --- BD-2026-105：中标公告详情页缺失（404） -> 待核实（详情抓取失败） ---
+    {
+        "file": "cand_105.html", "kind": "candidate",
+        "project_no": "CG-2026-205", "project_name": "老旧小区电梯更新项目",
+        "notice_type": "中标候选人公示", "publish": "2026-10-26 10:30:00",
+        "title": "老旧小区电梯更新项目中标候选人公示",
+        "note": "现将评标委员会推荐的中标候选人予以公示。",
+        "headers": ("排名", "成员角色", "企业名称", "信用代码"),
+        "sections": [
+            ("BD-2026-105", "电梯设备更新", [
+                ("第一中标候选人", [
+                    ("牵头人", "恒达电梯有限公司", "91320100MA7NQ9L43T"),
+                    ("成员", "安达安装工程有限公司", "91320106MA8UR1M54T"),
+                ]),
+                ("第二中标候选人", [
+                    ("牵头人", "三菱梯联电梯有限公司", "91320500MA9PW2N65U"),
+                ]),
+            ]),
+        ],
+    },
+    # win_105.html 故意不生成：列表页链接将 404
+
+    # --- BD-2026-106：候选人公示详情页缺失（404） -> 待核实（详情抓取失败） ---
+    {
+        "file": "win_106.html", "kind": "winning",
+        "project_no": "CG-2026-206", "project_name": "园区绿化养护服务项目",
+        "notice_type": "中标公告", "publish": "2026-10-25 16:00:00",
+        "title": "园区绿化养护服务项目中标公告",
+        "note": "本项目中标人信息如下。",
+        "headers": ("联合体角色", "投标人名称", "统一社会信用代码"),
+        "sections": [
+            ("BD-2026-106", "绿化养护服务", [
+                ("牵头人", "青禾园林工程有限公司", "91330100MA1QT3P76X"),
+                ("成员", "润泽灌溉工程有限公司", "91330106MA2RU4Q87W"),
+            ]),
+        ],
+    },
+    # cand_106.html 故意不生成：列表页链接将 404
+]
+
+# 列表页条目：(详情相对路径, 标题, 发布时间)；None 路径表示故意缺失的详情页（404）
+BID_LIST_PAGE_1: list[tuple[str, str, str]] = [
+    ("biddetail/win_103.html", "城市基础设施提升工程二标段（文化中心智能化）中标结果公告", "2026-11-04 09:30:00"),
+    ("biddetail/win_101.html", "智慧物流园区建设项目中标结果公告", "2026-11-03 10:00:00"),
+    ("biddetail/cand_102_103.html", "城市基础设施提升工程（一、二标段）中标候选人公示", "2026-10-30 15:00:00"),
+    ("biddetail/win_102.html", "城市基础设施提升工程一标段（排水管网改造）中标公告", "2026-10-29 11:00:00"),
+    ("biddetail/cand_101.html", "智慧物流园区建设项目中标候选人公示", "2026-10-28 09:30:00"),
+]
+BID_LIST_PAGE_2: list[tuple[str, str, str]] = [
+    ("biddetail/win_104.html", "新能源充电桩采购项目中标结果公告", "2026-10-27 14:00:00"),
+    ("biddetail/cand_105.html", "老旧小区电梯更新项目中标候选人公示", "2026-10-26 10:30:00"),
+    ("biddetail/win_105.html", "老旧小区电梯更新项目（标段编号：BD-2026-105）中标结果公告", "2026-10-26 09:00:00"),
+    ("biddetail/win_106.html", "园区绿化养护服务项目中标公告", "2026-10-25 16:00:00"),
+    ("biddetail/cand_106.html", "园区绿化养护服务项目（标段编号：BD-2026-106）中标候选人公示", "2026-10-24 10:00:00"),
+    ("detail/notice_001.html", "市政道路养护设备采购招标公告", "2026-10-08 09:00:00"),
+]
+
+
+def _check_credit_codes() -> None:
+    """自检：示例数据中的统一社会信用代码均为 18 位合法字符。"""
+    valid = set("0123456789ABCDEFGHJKLMNPQRTUWXY")
+    for notice in BID_NOTICES:
+        for section in notice["sections"]:
+            rows = section[2]
+            members = (
+                [m for _, ms in rows for m in ms]
+                if notice["kind"] == "candidate"
+                else rows
+            )
+            for _, name, code in members:
+                assert len(code) == 18 and set(code) <= valid, (
+                    f"{notice['file']} 中 {name} 的信用代码不合法: {code}"
+                )
+
+
+def _members_table(headers: tuple, entries: list, candidate: bool) -> str:
+    """生成成员表格；候选人公示按候选序号用 rowspan 合并单元格。"""
+    lines = ['<table class="members">', "      <tr>"]
+    for header in headers:
+        lines.append(f"        <th>{html.escape(header)}</th>")
+    lines.append("      </tr>")
+    if candidate:
+        for rank, members in entries:
+            for i, (role, name, code) in enumerate(members):
+                lines.append("      <tr>")
+                if i == 0:
+                    lines.append(f'        <td rowspan="{len(members)}">{html.escape(rank)}</td>')
+                lines.append(f"        <td>{html.escape(role)}</td>")
+                lines.append(f"        <td>{html.escape(name)}</td>")
+                lines.append(f"        <td>{html.escape(code)}</td>")
+                lines.append("      </tr>")
+    else:
+        for role, name, code in entries:
+            lines.append("      <tr>")
+            lines.append(f"        <td>{html.escape(role)}</td>")
+            lines.append(f"        <td>{html.escape(name)}</td>")
+            lines.append(f"        <td>{html.escape(code)}</td>")
+            lines.append("      </tr>")
+    lines.append("    </table>")
+    return "\n".join(lines)
+
+
+def build_bid_detail(notice: dict) -> str:
+    """生成候选人公示 / 中标公告详情页。"""
+    fields = [
+        ("项目编号", notice["project_no"]),
+        ("公告类型", notice["notice_type"]),
+        ("发布时间", notice["publish"]),
+        ("项目名称", notice["project_name"]),
+    ]
+    field_rows = "\n      ".join(
+        f"<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>" for k, v in fields
+    )
+    candidate = notice["kind"] == "candidate"
+    blocks = []
+    for section_no, section_name, rows in notice["sections"]:
+        table = _members_table(notice["headers"], rows, candidate)
+        blocks.append(
+            f'  <h2 class="sec">标段编号：{html.escape(section_no)}'
+            f"（{html.escape(section_name)}）</h2>\n    {table}"
+        )
+    body = "\n".join(blocks)
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>{html.escape(notice["title"])}</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="../bidlist/page_1.html">返回中标公告目录</a></p>
+  <h1>{html.escape(notice["title"])}</h1>
+  <table class="fields">
+      {field_rows}
+  </table>
+  {body}
+  <div class="content">
+    <p>{html.escape(notice["note"])}</p>
+    <p>采购代理人请以本平台正式公告内容为准。</p>
+  </div>
+</div>
+</body>
+</html>
+"""
+
+
+def build_bid_list_page(page_no: int, items: list[tuple[str, str, str]], has_next: bool) -> str:
+    items_html = []
+    for href, title, publish in items:
+        items_html.append(
+            f'    <li><a class="notice-link" href="../{href}">'
+            f'<span class="t">{html.escape(title)}</span>'
+            f'<span class="d">{publish}</span></a></li>'
+        )
+    pager = (
+        '<div class="pager"><a class="next-page" href="page_2.html">下一页</a></div>'
+        if has_next
+        else '<div class="pager"><span class="disabled">下一页</span></div>'
+    )
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>中标公告目录 - 第{page_no}页</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>中标公告目录（候选人公示 / 中标公告）</h1>
+  <ul class="notice-list">
+{chr(10).join(items_html)}
+  </ul>
+{pager}
 </div>
 </body>
 </html>
@@ -185,6 +503,10 @@ h1 { font-size:20px; margin:0 0 18px; }
 table.fields { border-collapse:collapse; width:100%; margin:16px 0; }
 table.fields th, table.fields td { border:1px solid #d7dde5; padding:9px 12px; font-size:14px; text-align:left; }
 table.fields th { background:#f3f6fb; width:160px; white-space:nowrap; }
+table.members { border-collapse:collapse; width:100%; margin:12px 0; }
+table.members th, table.members td { border:1px solid #d7dde5; padding:8px 10px; font-size:14px; text-align:left; }
+table.members th { background:#f0f7f4; }
+h2.sec { font-size:16px; margin:22px 0 8px; color:#0f766e; }
 .content { line-height:1.8; font-size:14px; }
 ul.notice-list { list-style:none; margin:0; padding:0; }
 ul.notice-list li { border-bottom:1px solid #eef1f5; }
@@ -202,6 +524,8 @@ ul.notice-list li { border-bottom:1px solid #eef1f5; }
 def main() -> None:
     (OUTPUT / "list").mkdir(parents=True, exist_ok=True)
     (OUTPUT / "detail").mkdir(parents=True, exist_ok=True)
+    (OUTPUT / "bidlist").mkdir(parents=True, exist_ok=True)
+    (OUTPUT / "biddetail").mkdir(parents=True, exist_ok=True)
     (OUTPUT / "assets").mkdir(parents=True, exist_ok=True)
 
     indexed = list(enumerate(NOTICES, start=1))
@@ -221,9 +545,25 @@ def main() -> None:
             build_detail(notice, index), encoding="utf-8"
         )
 
+    # 中标联合体候选人核对示例：目录两页 + 详情页（win_105 / cand_106 故意缺失）
+    _check_credit_codes()
+    (OUTPUT / "bidlist" / "page_1.html").write_text(
+        build_bid_list_page(1, BID_LIST_PAGE_1, has_next=True), encoding="utf-8"
+    )
+    (OUTPUT / "bidlist" / "page_2.html").write_text(
+        build_bid_list_page(2, BID_LIST_PAGE_2, has_next=False), encoding="utf-8"
+    )
+    for notice in BID_NOTICES:
+        (OUTPUT / "biddetail" / notice["file"]).write_text(
+            build_bid_detail(notice), encoding="utf-8"
+        )
+
     (OUTPUT / "index.html").write_text(build_index(), encoding="utf-8")
     (OUTPUT / "assets" / "style.css").write_text(CSS, encoding="utf-8")
-    print(f"示例站点已生成：{OUTPUT}（{len(NOTICES)} 条公告，{len(pages)} 个列表页）")
+    print(
+        f"示例站点已生成：{OUTPUT}（{len(NOTICES)} 条招标公告，{len(BID_NOTICES)} 页中标类公告，"
+        "bidlist 目录 2 页）"
+    )
 
 
 if __name__ == "__main__":

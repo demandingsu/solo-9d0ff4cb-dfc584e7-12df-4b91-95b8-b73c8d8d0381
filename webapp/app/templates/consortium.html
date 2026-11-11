@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中标联合体候选人核对</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+         background: #f0f2f5; color: #1f2937; }
+  header { background: #0f766e; color: #fff; padding: 20px 32px; }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; font-size: 13px; opacity: .85; }
+  main { max-width: 1180px; margin: 24px auto; padding: 0 20px; }
+  .card { background: #fff; border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  form { display: flex; gap: 12px; flex-wrap: wrap; }
+  input[name="url"] { flex: 1 1 420px; padding: 11px 14px; border: 1px solid #cbd5e1;
+                      border-radius: 8px; font-size: 14px; }
+  button { padding: 11px 28px; background: #0f766e; color: #fff; border: none;
+           border-radius: 8px; font-size: 14px; cursor: pointer; }
+  button:hover { background: #115e59; }
+  .hint { margin-top: 10px; font-size: 12px; color: #64748b; }
+  .hint code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+  .back-link { font-size: 13px; color: #0f766e; text-decoration: none; }
+  .back-link:hover { text-decoration: underline; }
+  .meta-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #475569; margin-bottom: 14px; }
+  .meta-row span { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 999px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f8fafc; white-space: nowrap; }
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px;
+           font-weight: 600; white-space: nowrap; }
+  .badge-入围 { background: #dcfce7; color: #166534; }
+  .badge-未入围 { background: #fee2e2; color: #991b1b; }
+  .badge-待核实 { background: #ffedd5; color: #9a3412; }
+  .section-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .section-head h3 { margin: 0; font-size: 15px; }
+  .section-head .sec-name { color: #475569; font-size: 13px; }
+  .note { color: #64748b; font-size: 12px; margin: 4px 0 10px; }
+  .side-title { font-size: 13px; font-weight: 600; color: #334155; margin: 12px 0 6px; }
+  .side-title a { color: #0f766e; text-decoration: none; font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .side-title a:hover { text-decoration: underline; }
+  .src { color: #64748b; font-size: 12px; }
+  .src a { color: #0f766e; text-decoration: none; }
+  .src a:hover { text-decoration: underline; }
+  .cand-entry { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .cand-entry.matched { border-color: #16a34a; background: #f0fdf4; }
+  .cand-rank { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .cand-rank .tag-match { background: #16a34a; color: #fff; border-radius: 4px; padding: 1px 8px;
+                          font-size: 11px; margin-left: 8px; }
+  .role-tag { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 4px;
+              padding: 1px 7px; font-size: 11px; }
+  .role-lead { background: #fef3c7; color: #92400e; }
+  .errors { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px;
+            padding: 12px 16px; font-size: 13px; margin-top: 12px; }
+  .errors ul { margin: 6px 0 0; padding-left: 20px; }
+  .failed { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 8px;
+            padding: 12px 16px; font-size: 13px; margin-top: 12px; }
+  .failed ul { margin: 6px 0 0; padding-left: 20px; }
+  .empty { text-align: center; color: #64748b; padding: 32px; font-size: 14px; }
+  h2 { font-size: 16px; margin: 0 0 14px; }
+  details { margin-top: 8px; }
+  details summary { cursor: pointer; color: #0f766e; font-size: 12px; }
+  .mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>中标联合体候选人核对</h1>
+  <p>输入公告目录地址，沿同站点“下一页”读取候选人公示与中标公告详情，按标段比对中标联合体的“名称＋统一社会信用代码”集合。</p>
+</header>
+<main>
+  <div class="card">
+    <form method="get" action="/consortium">
+      <input type="url" name="url" value="{{ entry_url }}" placeholder="https://example.gov.cn/notice/bidlist" required>
+      <button type="submit">开始核对</button>
+    </form>
+    <div class="hint">
+      示例站点目录：<code>http://example-site/bidlist/page_1.html</code>（Docker 内网地址，容器间抓取；公告链接经本机代理打开）
+      ｜ <a class="back-link" href="/">返回招标延期核对</a>
+    </div>
+  </div>
+
+  {% if report is not none %}
+  <div class="card">
+    <h2>抓取概况</h2>
+    <div class="meta-row">
+      <span>列表页：{{ report.visited_list_pages|length }} 个</span>
+      <span>候选人公示：{{ report.notices|selectattr("category", "equalto", "candidate")|list|length }} 份</span>
+      <span>中标公告：{{ report.notices|selectattr("category", "equalto", "winning")|list|length }} 份</span>
+      <span>详情抓取失败：{{ report.failed_details|length }} 个</span>
+      <span>跳过链接：{{ report.skipped_urls|length }} 个</span>
+    </div>
+    {% if report.visited_list_pages %}
+    <table>
+      <tr><th>已遍历列表页（顺序即“下一页”路径）</th></tr>
+      {% for page in report.visited_list_pages %}
+      <tr><td><a href="/view?url={{ page|urlencode }}" target="_blank">{{ page }}</a></td></tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+    {% if report.failed_details %}
+    <div class="failed">
+      <strong>相关详情抓取失败（对应标段已标“待核实”）</strong>
+      <ul>
+        {% for item in report.failed_details %}
+        <li>{{ item.anchor_text or item.url }} — <span class="mono">{{ item.url }}</span>（{{ item.error }}）</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if report.skipped_urls %}
+    <details>
+      <summary>查看跳过的链接（{{ report.skipped_urls|length }}）</summary>
+      <table style="margin-top:8px;">
+        <tr><th>链接</th><th>原因</th></tr>
+        {% for link, reason in report.skipped_urls %}
+        <tr><td style="word-break:break-all;">{{ link }}</td><td>{{ reason }}</td></tr>
+        {% endfor %}
+      </table>
+    </details>
+    {% endif %}
+    {% if report.errors %}
+    <div class="errors">
+      <strong>抓取错误</strong>
+      <ul>{% for err in report.errors %}<li>{{ err }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>逐标段核对结果</h2>
+    {% if sections %}
+      {% for sec in sections %}
+      <div class="cand-entry" style="margin-bottom:18px;">
+        <div class="section-head">
+          <h3>标段 {{ sec.section_no }}</h3>
+          {% if sec.section_name %}<span class="sec-name">{{ sec.section_name }}</span>{% endif %}
+          <span class="badge badge-{{ sec.status.value }}">{{ sec.status.value }}</span>
+          {% if sec.matched_rank %}<span class="src">匹配候选序号：{{ sec.matched_rank }}</span>{% endif %}
+        </div>
+        <div class="note">{{ sec.note }}</div>
+
+        <div class="side-title">
+          中标联合体（中标公告）
+          {% if sec.winning_source %}<a href="/view?url={{ sec.winning_source|urlencode }}" target="_blank">{{ sec.winning_title or '原文链接' }}</a>{% endif %}
+        </div>
+        {% if sec.winning_members %}
+        <table>
+          <tr><th style="width:90px;">成员角色</th><th>成员名称</th><th style="width:230px;">统一社会信用代码</th></tr>
+          {% for m in sec.winning_members %}
+          <tr>
+            <td>{% if m.role %}<span class="role-tag {% if '牵头' in m.role %}role-lead{% endif %}">{{ m.role }}</span>{% else %}—{% endif %}</td>
+            <td>{{ m.name }}</td>
+            <td class="mono">{{ m.credit_code }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        {% else %}
+        <div class="src">未取得中标联合体成员（{{ sec.winning_source and '公告未提取到成员' or '中标公告缺失或抓取失败' }}）。</div>
+        {% endif %}
+
+        <div class="side-title" style="margin-top:14px;">
+          候选人公示（{{ sec.candidates|length }} 个候选序号）
+          {% for url, title in sec.candidate_sources %}<a href="/view?url={{ url|urlencode }}" target="_blank">{{ title or '公示原文' }}</a>{% endfor %}
+        </div>
+        {% if sec.candidates %}
+          {% for entry in sec.candidates %}
+          <div class="cand-entry {% if sec.matched_rank == entry.rank %}matched{% endif %}">
+            <div class="cand-rank">{{ entry.rank }}
+              {% if sec.matched_rank == entry.rank %}<span class="tag-match">集合一致 · 入围</span>{% endif %}
+            </div>
+            <table>
+              <tr><th style="width:90px;">成员角色</th><th>成员名称</th><th style="width:230px;">统一社会信用代码</th></tr>
+              {% for m in entry.members %}
+              <tr>
+                <td>{% if m.role %}<span class="role-tag {% if '牵头' in m.role %}role-lead{% endif %}">{{ m.role }}</span>{% else %}—{% endif %}</td>
+                <td>{{ m.name }}</td>
+                <td class="mono">{{ m.credit_code }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="src">未取得同标段候选人公示（候选资料缺失或公示详情抓取失败）。</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty">未从入口目录解析到任何候选人公示 / 中标公告标段，请检查地址或站点结构。</div>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+</body>
+</html>

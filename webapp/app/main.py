@@ -10,6 +10,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 
+from .consortium_crawler import crawl_consortium
+from .consortium_matcher import match_sections
 from .crawler import REQUEST_TIMEOUT, USER_AGENT, crawl
 from .merger import merge_announcements
 
@@ -32,6 +34,22 @@ def index(request: Request, url: str | None = None) -> HTMLResponse:
         context["report"] = report
         context["results"] = merge_announcements(report.announcements)
     return templates.TemplateResponse("index.html", context)
+
+
+@app.get("/consortium", response_class=HTMLResponse)
+def consortium(request: Request, url: str | None = None) -> HTMLResponse:
+    """中标联合体候选人核对：输入公告目录 URL，逐标段比对入围情况。"""
+    context = {
+        "request": request,
+        "entry_url": url or "",
+        "report": None,
+        "sections": None,
+    }
+    if url and url.strip():
+        report = crawl_consortium(url.strip())
+        context["report"] = report
+        context["sections"] = match_sections(report.notices, report.failed_details)
+    return templates.TemplateResponse("consortium.html", context)
 
 
 @app.get("/health")
